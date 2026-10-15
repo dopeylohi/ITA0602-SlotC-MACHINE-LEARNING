@@ -1,0 +1,107 @@
+#MAIN CODE
+
+
+import csv
+import io
+
+csv_data = """Sky,AirTemp,Humidity,Wind,Water,Forecast,EnjoySport
+Sunny,Warm,Normal,Strong,Warm,Same,Yes
+Sunny,Warm,High,Strong,Warm,Same,Yes
+Rainy,Cold,High,Strong,Warm,Change,No
+Sunny,Warm,High,Strong,Cool,Change,Yes
+"""
+reader = csv.reader(io.StringIO(csv_data))
+header = next(reader)
+data = list(reader)
+
+attributes = header[:-1]
+num_attributes = len(attributes)
+
+S = [['Ø'] * num_attributes]
+G = [['?'] * num_attributes]
+
+def more_general_or_equal(h1, h2):
+    """Check whether h1 is at least as general as h2."""
+    return all(a == '?' or a == b or b == 'Ø'
+               for a, b in zip(h1, h2))
+
+def covers(h, example):
+    """Check whether a hypothesis covers an example."""
+    return all(h[i] == '?' or h[i] == example[i]
+               for i in range(len(h)))
+
+def remove_duplicates(hypotheses):
+    result = []
+    for h in hypotheses:
+        if h not in result:
+            result.append(h)
+    return result
+
+print("CANDIDATE ELIMINATION ALGORITHM")
+print("=" * 50)
+print("Attributes:", attributes)
+
+for index, row in enumerate(data, start=1):
+    example = row[:-1]
+    target = row[-1]
+
+    print(f"\nExample {index}: {row}")
+
+    if target == 'Yes':
+        G = [g for g in G if covers(g, example)]
+
+        new_S = []
+        for s in S:
+            if covers(s, example):
+                new_S.append(s)
+            else:
+                for i in range(num_attributes):
+                    if s[i] == 'Ø':
+                        new_h = example.copy()
+                    elif s[i] != example[i]:
+                        new_h = s.copy()
+                        new_h[i] = '?'
+                    else:
+                        continue
+
+                    if any(more_general_or_equal(g, new_h)
+                           for g in G):
+                        new_S.append(new_h)
+
+        S = remove_duplicates(new_S)
+        S = [s for s in S if not any(
+            s != other and more_general_or_equal(s, other)
+            for other in S
+        )]
+
+    else:
+        S = [s for s in S if not covers(s, example)]
+        new_G = []
+        for g in G:
+            if not covers(g, example):
+                new_G.append(g)
+            else:
+                for i in range(num_attributes):
+                    if g[i] == '?':
+                        for value in set(
+                            row[i] for row in data
+                            if row[-1] == 'Yes'
+                        ):
+                            if value != example[i]:
+                                new_h = g.copy()
+                                new_h[i] = value
+
+OUTPUT:
+CANDIDATE ELIMINATION ALGORITHM
+==================================================
+Attributes: ['Sky', 'AirTemp', 'Humidity', 'Wind', 'Water', 'Forecast']
+
+Example 1: ['Sunny', 'Warm', 'Normal', 'Strong', 'Warm', 'Same', 'Yes']
+
+Example 2: ['Sunny', 'Warm', 'High', 'Strong', 'Warm', 'Same', 'Yes']
+
+Example 3: ['Rainy', 'Cold', 'High', 'Strong', 'Warm', 'Change', 'No']
+
+Example 4: ['Sunny', 'Warm', 'High', 'Strong', 'Cool', 'Change', 'Yes']
+
+                               
