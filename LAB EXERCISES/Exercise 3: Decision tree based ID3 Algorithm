@@ -1,0 +1,188 @@
+#MAIN CODE
+
+
+import math
+import pandas as pd
+from collections import Counter
+
+data = {
+    'Outlook': ['Sunny', 'Sunny', 'Overcast', 'Rain',
+                'Rain', 'Rain', 'Overcast', 'Sunny',
+                'Sunny', 'Rain', 'Sunny', 'Overcast',
+                'Overcast', 'Rain'],
+    'Temperature': ['Hot', 'Hot', 'Hot', 'Mild',
+                    'Cool', 'Cool', 'Cool', 'Mild',
+                    'Cool', 'Mild', 'Mild', 'Mild',
+                    'Hot', 'Mild'],
+    'Humidity': ['High', 'High', 'High', 'High',
+                 'Normal', 'Normal', 'Normal', 'High',
+                 'Normal', 'Normal', 'Normal', 'High',
+                 'Normal', 'High'],
+    'Wind': ['Weak', 'Strong', 'Weak', 'Weak',
+             'Weak', 'Strong', 'Strong', 'Weak',
+             'Weak', 'Weak', 'Strong', 'Strong',
+             'Weak', 'Strong'],
+    'Play': ['No', 'No', 'Yes', 'Yes',
+             'Yes', 'No', 'Yes', 'No',
+             'Yes', 'Yes', 'Yes', 'Yes',
+             'Yes', 'No']
+}
+
+df = pd.DataFrame(data)
+target = 'Play'
+
+print("TRAINING DATASET")
+print(df.to_string(index=False))
+
+
+def entropy(labels):
+    counts = Counter(labels)
+    total = len(labels)
+    result = 0
+
+    for count in counts.values():
+        p = count / total
+        result -= p * math.log2(p)
+
+    return result
+
+
+def information_gain(df, attribute, target):
+    total_entropy = entropy(df[target])
+    weighted_entropy = 0
+
+    for value in df[attribute].unique():
+        subset = df[df[attribute] == value]
+        weighted_entropy += (
+            len(subset) / len(df)
+        ) * entropy(subset[target])
+
+    return total_entropy - weighted_entropy
+
+
+def id3(df, target, attributes):
+    if len(df[target].unique()) == 1:
+        return df[target].iloc[0]
+
+    if not attributes:
+        return df[target].mode()[0]
+
+    gains = {
+        attr: information_gain(df, attr, target)
+        for attr in attributes
+    }
+
+    best_attribute = max(gains, key=gains.get)
+
+    tree = {best_attribute: {}}
+    remaining = [a for a in attributes if a != best_attribute]
+
+    for value in df[best_attribute].unique():
+        subset = df[df[best_attribute] == value]
+
+        if subset.empty:
+            tree[best_attribute][value] = df[target].mode()[0]
+        else:
+            tree[best_attribute][value] = id3(
+                subset, target, remaining
+            )
+
+    return tree
+
+
+def print_tree(tree, indent=''):
+    if not isinstance(tree, dict):
+        print(indent + '-> ' + str(tree))
+        return
+
+    attribute = next(iter(tree))
+
+    for value, subtree in tree[attribute].items():
+        print(indent + str(attribute) + ' = ' + str(value))
+        print_tree(subtree, indent + '  ')
+
+
+attributes = [col for col in df.columns if col != target]
+
+print("\nINFORMATION GAIN")
+for attr in attributes:
+    print(attr, ":", round(information_gain(df, attr, target), 4))
+
+tree = id3(df, target, attributes)
+
+print("\nGENERATED ID3 DECISION TREE")
+print_tree(tree)
+
+
+def predict(tree, sample, default='Yes'):
+    if not isinstance(tree, dict):
+        return tree
+
+    attribute = next(iter(tree))
+    value = sample.get(attribute)
+
+    if value not in tree[attribute]:
+        return default
+
+    return predict(tree[attribute][value], sample, default)
+
+
+new_sample = {
+    'Outlook': 'Sunny',
+    'Temperature': 'Cool',
+    'Humidity': 'Normal',
+    'Wind': 'Weak'
+}
+
+prediction = predict(tree, new_sample, df[target].mode()[0])
+
+print("\nNEW SAMPLE")
+print(new_sample)
+print("Predicted Class:", prediction)
+
+
+
+OUTPUT
+
+TRAINING DATASET
+ Outlook Temperature Humidity   Wind Play
+   Sunny         Hot     High   Weak   No
+   Sunny         Hot     High Strong   No
+Overcast         Hot     High   Weak  Yes
+    Rain        Mild     High   Weak  Yes
+    Rain        Cool   Normal   Weak  Yes
+    Rain        Cool   Normal Strong   No
+Overcast        Cool   Normal Strong  Yes
+   Sunny        Mild     High   Weak   No
+   Sunny        Cool   Normal   Weak  Yes
+    Rain        Mild   Normal   Weak  Yes
+   Sunny        Mild   Normal Strong  Yes
+Overcast        Mild     High Strong  Yes
+Overcast         Hot   Normal   Weak  Yes
+    Rain        Mild     High Strong   No
+
+INFORMATION GAIN
+Outlook : 0.2467
+Temperature : 0.0292
+Humidity : 0.1518
+Wind : 0.0481
+
+GENERATED ID3 DECISION TREE
+Outlook = Sunny
+  Humidity = High
+    -> No
+  Humidity = Normal
+    -> Yes
+Outlook = Overcast
+  -> Yes
+Outlook = Rain
+  Wind = Weak
+    -> Yes
+  Wind = Strong
+    -> No
+
+NEW SAMPLE
+{'Outlook': 'Sunny', 'Temperature': 'Cool', 'Humidity': 'Normal', 'Wind': 'Weak'}
+Predicted Class: Yes
+
+
