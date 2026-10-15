@@ -1,0 +1,85 @@
+#MAIN CODE
+
+data = [
+    ['Sunny', 'Warm', 'Normal', 'Strong', 'Warm', 'Same', 'Yes'],
+    ['Sunny', 'Warm', 'High', 'Strong', 'Warm', 'Same', 'Yes'],
+    ['Rainy', 'Cold', 'High', 'Strong', 'Warm', 'Change', 'No'],
+    ['Sunny', 'Warm', 'High', 'Strong', 'Cool', 'Change', 'Yes']
+]
+
+attributes = ['Sky', 'AirTemp', 'Humidity', 'Wind', 'Water', 'Forecast']
+
+hypothesis = ['Ø'] * len(attributes)
+
+print("FIND-S ALGORITHM")
+print("-" * 50)
+print("Attributes:", attributes)
+print("Initial Hypothesis:", hypothesis)
+
+for i, example in enumerate(data, start=1):
+    x = example[:-1]
+    target = example[-1]
+
+    print("\nExample", i, ":", example)
+
+    if target == 'Yes':
+        if hypothesis == ['Ø'] * len(attributes):
+            hypothesis = x.copy()
+        else:
+            for j in range(len(attributes)):
+                if hypothesis[j] != x[j]:
+                    hypothesis[j] = '?'
+
+        print("Positive example: Hypothesis updated")
+    else:
+        print("Negative example: Ignored")
+
+    print("Current Hypothesis:", hypothesis)
+
+print("\n" + "-" * 50)
+print("FINAL MOST SPECIFIC HYPOTHESIS")
+
+for name, value in zip(attributes, hypothesis):
+    print(name, ":", value)
+
+print("\nFinal Hypothesis:", hypothesis)
+print("\nResult: Find-S algorithm executed successfully.")
+
+Result: Find-S algorithm executed successfully.
+
+
+OUTPUT:
+
+FIND-S ALGORITHM
+--------------------------------------------------
+Attributes: ['Sky', 'AirTemp', 'Humidity', 'Wind', 'Water', 'Forecast']
+Initial Hypothesis: ['Ø', 'Ø', 'Ø', 'Ø', 'Ø', 'Ø']
+
+Example 1 : ['Sunny', 'Warm', 'Normal', 'Strong', 'Warm', 'Same', 'Yes']
+Positive example: Hypothesis updated
+Current Hypothesis: ['Sunny', 'Warm', 'Normal', 'Strong', 'Warm', 'Same']
+
+Example 2 : ['Sunny', 'Warm', 'High', 'Strong', 'Warm', 'Same', 'Yes']
+Positive example: Hypothesis updated
+Current Hypothesis: ['Sunny', 'Warm', '?', 'Strong', 'Warm', 'Same']
+
+Example 3 : ['Rainy', 'Cold', 'High', 'Strong', 'Warm', 'Change', 'No']
+Negative example: Ignored
+Current Hypothesis: ['Sunny', 'Warm', '?', 'Strong', 'Warm', 'Same']
+
+Example 4 : ['Sunny', 'Warm', 'High', 'Strong', 'Cool', 'Change', 'Yes']
+Positive example: Hypothesis updated
+Current Hypothesis: ['Sunny', 'Warm', '?', 'Strong', '?', '?']
+
+--------------------------------------------------
+FINAL MOST SPECIFIC HYPOTHESIS
+Sky : Sunny
+AirTemp : Warm
+Humidity : ?
+Wind : Strong
+Water : ?
+Forecast : ?
+
+Final Hypothesis: ['Sunny', 'Warm', '?', 'Strong', '?', '?']
+
+Result: Find-S algorithm executed successfully.
